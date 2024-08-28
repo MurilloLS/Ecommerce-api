@@ -1,4 +1,5 @@
 using EcommerceApi.Models;
+using ECommerceAPI.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace EcommerceApi.Data
@@ -10,5 +11,6 @@ namespace EcommerceApi.Data
     public DbSet<Product> Products { get; set; }
     public DbSet<Category> Categories { get; set; }
     public DbSet<Order> Orders { get; set; }
+    public DbSet<ShoppingCartItem> ShoppingCartItems { get; set; }
   }
 }
