@@ -1,12 +1,14 @@
-using EcommerceApi.Models;
+using System;
+using System.ComponentModel.DataAnnotations;
 
-namespace ECommerceAPI.Models
+namespace ECommerceApi.Models
 {
-  public class ShoppingCartItem
-  {
-    public Guid Id { get; set; }  // Identificador único do item no carrinho
-    public Product Product { get; set; }  // Produto associado ao item
-    public int Quantity { get; set; }  // Quantidade do produto no carrinho
-    public Order Order { get; set; }  // Relacionamento com o pedido
-  }
+    public class ShoppingCartItem
+    {
+        public Guid Id { get; set; }
+        public Guid ProductId { get; set; }
+        public Product Product { get; set; }
+        [Required]
+        public int Quantity { get; set; }
+    }
 }
