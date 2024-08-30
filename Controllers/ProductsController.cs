@@ -1,6 +1,7 @@
 
 
 using ECommerceApi.Data;
+using ECommerceApi.Dtos;
 using ECommerceApi.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,42 +20,101 @@ namespace ECommerceApi.Controllers
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
+    public async Task<ActionResult<IEnumerable<ProductDto>>> GetProducts()
     {
-      return await _context.Products.Include(p => p.Category).ToListAsync();
+      var products = await _context.Products
+          .Include(p => p.Category)
+          .Select(p => new ProductDto
+          {
+            Id = p.Id,
+            Name = p.Name,
+            Price = p.Price,
+            CategoryId = p.CategoryId,
+            Category = new CategoryDto
+            {
+              Name = p.Category.Name,
+              Id = p.Category.Id,
+            }
+          })
+          .ToListAsync();
+
+      return Ok(products);
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<Product>> GetProduct(Guid id)
+    public async Task<ActionResult<ProductDto>> GetProduct(Guid id)
     {
-      var product = await _context.Products.Include(p => p.Category).FirstOrDefaultAsync(p => p.Id == id);
+      var product = await _context.Products
+      .Include(p => p.Category)
+      .Where(p => p.Id == id)
+      .Select(p => new ProductDto
+      {
+        Id = p.Id,
+        Name = p.Name,
+        Price = p.Price,
+        CategoryId = p.CategoryId,
+        Category = new CategoryDto
+        {
+          Name = p.Category.Name,
+          Id = p.Category.Id,
+        }
+      })
+      .FirstOrDefaultAsync();
 
       if (product == null)
       {
         return NotFound();
       }
 
-      return product;
+      return Ok(product);
     }
 
     [HttpPost]
-    public async Task<ActionResult<Product>> PostProduct(Product product)
+    public async Task<ActionResult<ProductDto>> PostProduct(ProductCreateUpdateDto productDto)
     {
+      var product = new Product
+      {
+        Id = Guid.NewGuid(),
+        Name = productDto.Name,
+        Price = productDto.Price,
+        CategoryId = Guid.NewGuid()
+      };
+
       _context.Products.Add(product);
       await _context.SaveChangesAsync();
 
-      return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
+      var productDtoResult = new ProductDto
+      {
+        Id = product.Id,
+        Name = product.Name,
+        Price = product.Price,
+        CategoryId = product.CategoryId,
+        Category = new CategoryDto
+        {
+          Id = (await _context.Categories.FindAsync(product.CategoryId))?.Id ?? default,
+          Name = (await _context.Categories.FindAsync(product.CategoryId))?.Name
+        }
+      };
+
+      return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, productDtoResult);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutProduct(Guid id, Product product)
+    public async Task<IActionResult> PutProduct(Guid id, ProductCreateUpdateDto productDto)
     {
-      if (id != product.Id)
+      if (id == Guid.Empty || productDto == null)
       {
         return BadRequest();
       }
 
-      _context.Entry(product).State = EntityState.Modified;
+      var product = await _context.Products.FindAsync(id);
+      if (product == null)
+      {
+        return NotFound();
+      }
+      
+      product.Name = productDto.Name;
+      product.Price = productDto.Price;
 
       try
       {

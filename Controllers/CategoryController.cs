@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using ECommerceApi.Data;
 using ECommerceApi.Models;
 using Microsoft.EntityFrameworkCore;
+using ECommerceApi.Dtos;
 
 namespace ECommerceApi.Controllers
 {
@@ -17,42 +18,97 @@ namespace ECommerceApi.Controllers
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Category>>> GetCategories()
+    public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories()
     {
-      return await _context.Categories.Include(c => c.Products).ToListAsync();
+      var categories = await _context.Categories
+        .Select(category => new CategoryDto
+        {
+          Id = category.Id,
+          Name = category.Name,
+          Products = category.Products.Select(product => new ProductDto
+          {
+            Id = product.Id,
+            Name = product.Name,
+            Price = product.Price,
+            CategoryId = product.CategoryId,
+            Category = new CategoryDto
+            {
+              Id = product.Category.Id,
+              Name = product.Category.Name
+            }
+          }).ToList()
+        })
+        .ToListAsync();
+      return Ok(categories);
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<Category>> GetCategory(Guid id)
+    public async Task<ActionResult<CategoryDto>> GetCategory(Guid id)
     {
-      var category = await _context.Categories.Include(c => c.Products).FirstOrDefaultAsync(x => x.Id == id);
+      var category = await _context
+      .Categories
+      .Include(c => c.Products)
+      .FirstOrDefaultAsync(c => c.Id == id);
 
       if (category == null)
       {
         return NotFound();
       }
 
-      return category;
+      var categoryDto = new CategoryDto
+      {
+        Id = category.Id,
+        Name = category.Name,
+        Products = category.Products
+        .Select(x => new ProductDto
+        {
+          Id = x.Id,
+          Name = x.Name,
+          Price = x.Price,
+          CategoryId = x.CategoryId,
+          Category = new CategoryDto
+          {
+            Id = x.Category.Id,
+            Name = x.Category.Name,
+          }
+        }).ToList()
+      };
+
+      return Ok(categoryDto);
     }
 
     [HttpPost]
-    public async Task<ActionResult<Category>> PostCategory(Category category)
+    public async Task<ActionResult<CategoryDto>> PostCategory(CategoryCreateUpdateDto categoryCreateUpdateDto)
     {
+      var category = new Category
+      {
+        Id = Guid.NewGuid(),
+        Name = categoryCreateUpdateDto.Name
+      };
+
       _context.Categories.Add(category);
       await _context.SaveChangesAsync();
 
-      return CreatedAtAction(nameof(GetCategory), new { id = category.Id }, category);
+      var categoryDto = new CategoryDto
+      {
+        Id = category.Id,
+        Name = category.Name,
+        Products = new List<ProductDto>()
+      };
+  
+      return CreatedAtAction(nameof(GetCategory), new { id = category.Id }, categoryDto);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutCategory(Guid id, Category category)
+    public async Task<IActionResult> PutCategory(Guid id, CategoryCreateUpdateDto categoryUpdateDto)
     {
-      if (id != category.Id)
+      var existingCategory = await _context.Categories.FindAsync(id);
+      if (existingCategory == null)
       {
-        return BadRequest();
+        return NotFound();
       }
 
-      _context.Entry(category).State = EntityState.Modified;
+      existingCategory.Name = categoryUpdateDto.Name;
 
       try
       {
