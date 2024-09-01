@@ -22,10 +22,25 @@ namespace ECommerceApi.Controllers
     {
       var products = await _context.Products
           .Include(p => p.Category)
-          .Select(p => ItemToDto(p))
           .ToListAsync();
 
-      return Ok(products);
+      var productDtos = products.Select(p => new ProductDto
+      {
+          Id = p.Id,
+          Name = p.Name,
+          Price = p.Price,
+          CategoryId = p.Category?.Id,
+          Category = new CategoryDto
+          {
+            Id = p.Category.Id,
+            Name = p.Category.Name,
+            Products = null
+          }
+      }).ToList();
+
+
+  
+      return Ok(productDtos);
     }
 
     [HttpGet("{id}")]
@@ -40,7 +55,10 @@ namespace ECommerceApi.Controllers
         return NotFound();
       }
 
-      return Ok(ItemToDto(product));
+      var productDto = ItemToDto(product);
+
+      productDto.Category.Products = null;
+      return Ok(productDto);
     }
 
     [HttpPost]

@@ -24,7 +24,16 @@ namespace ECommerceApi.Controllers
           .Include(c => c.Products)
           .ToListAsync();
 
-      var categoryDtos = categories.Select(ItemToDto).ToList();
+      var categoryDtos = categories.Select(category =>
+      {
+        var categoryDto = ItemToDto(category);
+        foreach (var product in categoryDto.Products)
+        {
+          product.CategoryId = null;
+          product.Category = null;
+        }
+        return categoryDto;
+      }).ToList();
       return Ok(categoryDtos);
     }
 
@@ -42,6 +51,11 @@ namespace ECommerceApi.Controllers
       }
 
       var categoryDto = ItemToDto(category);
+      foreach (var product in categoryDto.Products)
+      {
+          product.CategoryId = null;  
+          product.Category = null;    
+      }
       return Ok(categoryDto);
     }
 
