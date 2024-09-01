@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using ECommerceApi.Data;
-using ECommerceApi.Models;
 using Microsoft.EntityFrameworkCore;
 using ECommerceApi.Dtos;
+using ECommerceApi.Models;
 
 namespace ECommerceApi.Controllers
 {
@@ -21,59 +21,27 @@ namespace ECommerceApi.Controllers
     public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories()
     {
       var categories = await _context.Categories
-        .Select(category => new CategoryDto
-        {
-          Id = category.Id,
-          Name = category.Name,
-          Products = category.Products.Select(product => new ProductDto
-          {
-            Id = product.Id,
-            Name = product.Name,
-            Price = product.Price,
-            CategoryId = product.CategoryId,
-            Category = new CategoryDto
-            {
-              Id = product.Category.Id,
-              Name = product.Category.Name
-            }
-          }).ToList()
-        })
-        .ToListAsync();
-      return Ok(categories);
+          .Include(c => c.Products)
+          .ToListAsync();
+
+      var categoryDtos = categories.Select(ItemToDto).ToList();
+      return Ok(categoryDtos);
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<CategoryDto>> GetCategory(Guid id)
     {
       var category = await _context
-      .Categories
-      .Include(c => c.Products)
-      .FirstOrDefaultAsync(c => c.Id == id);
+          .Categories
+          .Include(c => c.Products)
+          .FirstOrDefaultAsync(c => c.Id == id);
 
       if (category == null)
       {
         return NotFound();
       }
 
-      var categoryDto = new CategoryDto
-      {
-        Id = category.Id,
-        Name = category.Name,
-        Products = category.Products
-        .Select(x => new ProductDto
-        {
-          Id = x.Id,
-          Name = x.Name,
-          Price = x.Price,
-          CategoryId = x.CategoryId,
-          Category = new CategoryDto
-          {
-            Id = x.Category.Id,
-            Name = x.Category.Name,
-          }
-        }).ToList()
-      };
-
+      var categoryDto = ItemToDto(category);
       return Ok(categoryDto);
     }
 
@@ -89,13 +57,11 @@ namespace ECommerceApi.Controllers
       _context.Categories.Add(category);
       await _context.SaveChangesAsync();
 
-      var categoryDto = new CategoryDto
-      {
-        Id = category.Id,
-        Name = category.Name,
-        Products = new List<ProductDto>()
-      };
-  
+      var createdCategory = await _context.Categories
+              .Include(c => c.Products)
+              .FirstOrDefaultAsync(c => c.Id == category.Id);
+
+      var categoryDto = ItemToDto(createdCategory);
       return CreatedAtAction(nameof(GetCategory), new { id = category.Id }, categoryDto);
     }
 
@@ -147,6 +113,27 @@ namespace ECommerceApi.Controllers
     private bool CategoryExists(Guid id)
     {
       return _context.Categories.Any(e => e.Id == id);
+    }
+
+    private CategoryDto ItemToDto(Category category)
+    {
+      return new CategoryDto
+      {
+        Id = category.Id,
+        Name = category.Name,
+        Products = category.Products.Select(product => new ProductDto
+        {
+          Id = product.Id,
+          Name = product.Name,
+          Price = product.Price,
+          CategoryId = product.CategoryId,
+          Category = new CategoryDto
+          {
+            Id = product.Category.Id,
+            Name = product.Category.Name
+          }
+        }).ToList()
+      };
     }
   }
 }

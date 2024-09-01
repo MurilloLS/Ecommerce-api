@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using ECommerceApi.Data;
-using ECommerceApi.Models;
 using Microsoft.EntityFrameworkCore;
+using ECommerceApi.Dtos;
+using ECommerceApi.Models;
 
 namespace ECommerceApi.Controllers
 {
@@ -17,42 +18,63 @@ namespace ECommerceApi.Controllers
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+    public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
     {
-      return await _context.Users.Include(u => u.Orders).ToListAsync();
+      var users = await _context.Users
+          .Include(u => u.ShoppingCart)
+          .ThenInclude(sc => sc.Items)
+          .ThenInclude(sci => sci.Product)
+          .Select(u => ItemToDto(u))
+          .ToListAsync();
+
+      return Ok(users);
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<User>> GetUser(Guid id)
+    public async Task<ActionResult<UserDto>> GetUser(Guid id)
     {
-      var user = await _context.Users.Include(u => u.Orders).ThenInclude(o => o.Items).ThenInclude(i => i.Product).FirstOrDefaultAsync(p => p.Id == id);
+      var user = await _context.Users
+          .Include(u => u.ShoppingCart)
+          .ThenInclude(sc => sc.Items)
+          .ThenInclude(sci => sci.Product)
+          .FirstOrDefaultAsync(u => u.Id == id);
 
       if (user == null)
       {
         return NotFound();
       }
 
-      return user;
+      return Ok(ItemToDto(user));
     }
 
     [HttpPost]
-    public async Task<ActionResult<User>> PostUser(User user)
+    public async Task<ActionResult<UserDto>> PostUser(UserCreateDto userCreateDto)
     {
+      var user = new User
+      {
+        Id = Guid.NewGuid(),
+        Name = userCreateDto.Name,
+        Email = userCreateDto.Email
+      };
+
       _context.Users.Add(user);
       await _context.SaveChangesAsync();
 
-      return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
+      var userDto = ItemToDto(user);
+      return CreatedAtAction(nameof(GetUser), new { id = userDto.Id }, userDto);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutUser(Guid id, User user)
+    public async Task<IActionResult> PutUser(Guid id, UserUpdateDto userUpdateDto)
     {
-      if (id != user.Id)
+      var existingUser = await _context.Users.FindAsync(id);
+      if (existingUser == null)
       {
-        return BadRequest();
+        return NotFound();
       }
 
-      _context.Entry(user).State = EntityState.Modified;
+      existingUser.Name = userUpdateDto.Name;
+      existingUser.Email = userUpdateDto.Email;
 
       try
       {
@@ -91,6 +113,38 @@ namespace ECommerceApi.Controllers
     private bool UserExists(Guid id)
     {
       return _context.Users.Any(e => e.Id == id);
+    }
+
+    private UserDto ItemToDto(User user)
+    {
+      return new UserDto
+      {
+        Id = user.Id,
+        Name = user.Name,
+        Email = user.Email,
+        ShoppingCart = user.ShoppingCart != null ? new ShoppingCartDto
+        {
+          Id = user.ShoppingCart.Id,
+          Items = user.ShoppingCart.Items.Select(i => new ShoppingCartItemDto
+          {
+            Id = i.Id,
+            ProductId = i.ProductId,
+            Product = new ProductDto
+            {
+              Id = i.Product.Id,
+              Name = i.Product.Name,
+              Price = i.Product.Price,
+              CategoryId = i.Product.CategoryId,
+              Category = new CategoryDto
+              {
+                Id = i.Product.Category.Id,
+                Name = i.Product.Category.Name
+              }
+            },
+            Quantity = i.Quantity
+          }).ToList()
+        } : null
+      };
     }
   }
 }

@@ -1,20 +1,18 @@
-
-
+using Microsoft.AspNetCore.Mvc;
 using ECommerceApi.Data;
+using Microsoft.EntityFrameworkCore;
 using ECommerceApi.Dtos;
 using ECommerceApi.Models;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApi.Controllers
 {
   [Route("api/[controller]")]
   [ApiController]
-  public class ProductsController : ControllerBase
+  public class ProductController : ControllerBase
   {
     private readonly ECommerceContext _context;
 
-    public ProductsController(ECommerceContext context)
+    public ProductController(ECommerceContext context)
     {
       _context = context;
     }
@@ -24,18 +22,7 @@ namespace ECommerceApi.Controllers
     {
       var products = await _context.Products
           .Include(p => p.Category)
-          .Select(p => new ProductDto
-          {
-            Id = p.Id,
-            Name = p.Name,
-            Price = p.Price,
-            CategoryId = p.CategoryId,
-            Category = new CategoryDto
-            {
-              Name = p.Category.Name,
-              Id = p.Category.Id,
-            }
-          })
+          .Select(p => ItemToDto(p))
           .ToListAsync();
 
       return Ok(products);
@@ -45,76 +32,52 @@ namespace ECommerceApi.Controllers
     public async Task<ActionResult<ProductDto>> GetProduct(Guid id)
     {
       var product = await _context.Products
-      .Include(p => p.Category)
-      .Where(p => p.Id == id)
-      .Select(p => new ProductDto
-      {
-        Id = p.Id,
-        Name = p.Name,
-        Price = p.Price,
-        CategoryId = p.CategoryId,
-        Category = new CategoryDto
-        {
-          Name = p.Category.Name,
-          Id = p.Category.Id,
-        }
-      })
-      .FirstOrDefaultAsync();
+          .Include(p => p.Category)
+          .FirstOrDefaultAsync(p => p.Id == id);
 
       if (product == null)
       {
         return NotFound();
       }
 
-      return Ok(product);
+      return Ok(ItemToDto(product));
     }
 
     [HttpPost]
-    public async Task<ActionResult<ProductDto>> PostProduct(ProductCreateUpdateDto productDto)
+    public async Task<ActionResult<ProductDto>> PostProduct(ProductCreateDto productCreateDto)
     {
+      var category = await _context.Categories.FindAsync(productCreateDto.CategoryId);
+      if (category == null)
+      {
+        return BadRequest("Invalid CategoryId. Category does not exist.");
+      }
+
       var product = new Product
       {
         Id = Guid.NewGuid(),
-        Name = productDto.Name,
-        Price = productDto.Price,
-        CategoryId = Guid.NewGuid()
+        Name = productCreateDto.Name,
+        Price = productCreateDto.Price,
+        CategoryId = productCreateDto.CategoryId
       };
 
       _context.Products.Add(product);
       await _context.SaveChangesAsync();
 
-      var productDtoResult = new ProductDto
-      {
-        Id = product.Id,
-        Name = product.Name,
-        Price = product.Price,
-        CategoryId = product.CategoryId,
-        Category = new CategoryDto
-        {
-          Id = (await _context.Categories.FindAsync(product.CategoryId))?.Id ?? default,
-          Name = (await _context.Categories.FindAsync(product.CategoryId))?.Name
-        }
-      };
-
-      return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, productDtoResult);
+      var productDto = ItemToDto(product);
+      return CreatedAtAction(nameof(GetProduct), new { id = productDto.Id }, productDto);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutProduct(Guid id, ProductCreateUpdateDto productDto)
+    public async Task<IActionResult> PutProduct(Guid id, ProductUpdateDto productUpdateDto)
     {
-      if (id == Guid.Empty || productDto == null)
-      {
-        return BadRequest();
-      }
-
-      var product = await _context.Products.FindAsync(id);
-      if (product == null)
+      var existingProduct = await _context.Products.FindAsync(id);
+      if (existingProduct == null)
       {
         return NotFound();
       }
-      
-      product.Name = productDto.Name;
-      product.Price = productDto.Price;
+
+      existingProduct.Name = productUpdateDto.Name;
+      existingProduct.Price = productUpdateDto.Price;
 
       try
       {
@@ -153,6 +116,22 @@ namespace ECommerceApi.Controllers
     private bool ProductExists(Guid id)
     {
       return _context.Products.Any(e => e.Id == id);
+    }
+
+    private ProductDto ItemToDto(Product product)
+    {
+      return new ProductDto
+      {
+        Id = product.Id,
+        Name = product.Name,
+        Price = product.Price,
+        CategoryId = product.CategoryId,
+        Category = product.Category != null ? new CategoryDto
+        {
+          Id = product.Category.Id,
+          Name = product.Category.Name
+        } : null
+      };
     }
   }
 }
