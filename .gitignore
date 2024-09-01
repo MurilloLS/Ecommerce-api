@@ -1,3 +1,19 @@
+# Dotnet
 bin/
 obj/
+*.db
+*.log
+*.user
+*.suo
+*.csproj.user
+.vscode/
 appsettings.Development.json
+
+# Migrations
+!Migrations/
+*.csproj
+*.sln
+
+# NuGet
+*.nupkg
+*.snupkg
