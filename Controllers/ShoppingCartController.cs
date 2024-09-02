@@ -119,28 +119,44 @@ namespace ECommerceApi.Controllers
 
     private ShoppingCartDto ItemToDto(ShoppingCart cart)
     {
+      if (cart == null)
+      {
+        throw new ArgumentNullException(nameof(cart));
+      }
+
+      UserDto userDto = cart.User != null ? new UserDto
+      {
+        Id = cart.User.Id,
+        Name = cart.User.Name,
+        Email = cart.User.Email
+      } : null;
+
+      var itemDtos = cart.Items?.Select(i => new ShoppingCartItemDto
+      {
+        Id = i.Id,
+        ProductId = i.ProductId,
+        Product = i.Product != null ? new ProductDto
+        {
+          Id = i.Product.Id,
+          Name = i.Product.Name,
+          Price = i.Product.Price,
+          CategoryId = i.Product.CategoryId,
+          Category = i.Product.Category != null ? new CategoryDto
+          {
+            Id = i.Product.Category.Id,
+            Name = i.Product.Category.Name
+          } : null
+        } : null,
+        Quantity = i.Quantity
+      }).ToList() ?? new List<ShoppingCartItemDto>();
+
       return new ShoppingCartDto
       {
         Id = cart.Id,
-        Items = cart.Items.Select(i => new ShoppingCartItemDto
-        {
-          Id = i.Id,
-          ProductId = i.ProductId,
-          Product = new ProductDto
-          {
-            Id = i.Product.Id,
-            Name = i.Product.Name,
-            Price = i.Product.Price,
-            CategoryId = i.Product.CategoryId,
-            Category = new CategoryDto
-            {
-              Id = i.Product.Category.Id,
-              Name = i.Product.Category.Name
-            }
-          },
-          Quantity = i.Quantity
-        }).ToList()
+        User = userDto,
+        Items = itemDtos
       };
     }
+
   }
 }

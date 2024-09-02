@@ -3,6 +3,7 @@ using ECommerceApi.Data;
 using Microsoft.EntityFrameworkCore;
 using ECommerceApi.Dtos;
 using ECommerceApi.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace ECommerceApi.Controllers
 {
@@ -24,11 +25,37 @@ namespace ECommerceApi.Controllers
           .Include(u => u.ShoppingCart)
           .ThenInclude(sc => sc.Items)
           .ThenInclude(sci => sci.Product)
-          .Select(u => ItemToDto(u))
           .ToListAsync();
 
-      return Ok(users);
+      var userDto = users.Select(u => new UserDto
+      {
+        Id = u.Id,
+        Name = u.Name,
+        Email = u.Email,
+        ShoppingCart = u.ShoppingCart != null ? new ShoppingCartDto
+        {
+          Id = u.ShoppingCart.Id,
+          Items = u.ShoppingCart.Items != null ? u.ShoppingCart.Items
+                  .Select(sc => new ShoppingCartItemDto
+                  {
+                    ProductId = sc.ProductId,
+                    Product = sc.Product != null ? new ProductDto
+                    {
+                      Name = sc.Product.Name,
+                      Category = sc.Product.Category != null ? new CategoryDto
+                      {
+                        Id = sc.Product.Category.Id,
+                        Name = sc.Product.Category.Name
+                      } : null
+                    } : null,
+                    Quantity = sc.Quantity
+                  }).ToList() : new List<ShoppingCartItemDto>()
+        } : null
+      }).ToList();
+
+      return Ok(userDto); // Certifique-se de retornar `userDto` aqui
     }
+
 
     [HttpGet("{id}")]
     public async Task<ActionResult<UserDto>> GetUser(Guid id)
