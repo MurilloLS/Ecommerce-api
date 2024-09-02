@@ -5,7 +5,9 @@ namespace ECommerceApi.Dtos
 {
   public class CategoryDto
   {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public Guid? Id { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public string? Name { get; set; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public ICollection<ProductDto> Products { get; set; } = new List<ProductDto>();

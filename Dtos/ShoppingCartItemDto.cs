@@ -1,13 +1,20 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace ECommerceApi.Dtos
 {
     public class ShoppingCartItemDto
     {
-        public Guid Id { get; set; }
-        public Guid ProductId { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public Guid? Id { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public Guid? ProductId { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public ProductDto? Product { get; set; }
-        public int Quantity { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public int? Quantity { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public Guid ShoppingCartId { get; set; }
     }
 
     public class ShoppingCartItemCreateDto
@@ -18,6 +25,8 @@ namespace ECommerceApi.Dtos
         [Required(ErrorMessage = "The Quantity field is required.")]
         [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1.")]
         public int Quantity { get; set; }
+        [Required]
+        public Guid ShoppingCartId { get; set; }
     }
 
     // public class ShoppingCartItemUpdateDto
