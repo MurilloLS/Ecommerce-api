@@ -38,10 +38,10 @@ namespace ECommerceApi.Controllers
           Items = u.ShoppingCart.Items != null ? u.ShoppingCart.Items
                   .Select(sc => new ShoppingCartItemDto
                   {
-                    ProductId = sc.ProductId,
                     Product = sc.Product != null ? new ProductDto
                     {
                       Name = sc.Product.Name,
+                      Price = sc.Product.Price,
                       Category = sc.Product.Category != null ? new CategoryDto
                       {
                         Id = sc.Product.Category.Id,
@@ -71,7 +71,30 @@ namespace ECommerceApi.Controllers
         return NotFound();
       }
 
-      return Ok(ItemToDto(user));
+      // Construção direta do DTO
+      var userDto = new UserDto
+      {
+        Id = user.Id,
+        Name = user.Name,
+        Email = user.Email,
+        ShoppingCart = user.ShoppingCart != null ? new ShoppingCartDto
+        {
+          Id = user.ShoppingCart.Id,
+          Items = user.ShoppingCart.Items?
+                  .Where(i => i != null && i.Product != null) // Verifica se i e Product não são null
+                  .Select(i => new ShoppingCartItemDto
+                  {
+                    Product = new ProductDto
+                    {
+                      Name = i.Product.Name,
+                      Price = i.Product.Price
+                    },
+                    Quantity = i.Quantity
+                  }).ToList()
+        } : null
+      };
+
+      return Ok(userDto);
     }
 
     [HttpPost]
@@ -121,7 +144,6 @@ namespace ECommerceApi.Controllers
 
       return NoContent();
     }
-
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteUser(Guid id)
     {
@@ -136,12 +158,10 @@ namespace ECommerceApi.Controllers
 
       return NoContent();
     }
-
     private bool UserExists(Guid id)
     {
       return _context.Users.Any(e => e.Id == id);
     }
-
     private UserDto ItemToDto(User user)
     {
       return new UserDto
@@ -155,7 +175,6 @@ namespace ECommerceApi.Controllers
           Items = user.ShoppingCart.Items.Select(i => new ShoppingCartItemDto
           {
             Id = i.Id,
-            ProductId = i.ProductId,
             Product = new ProductDto
             {
               Id = i.Product.Id,
@@ -173,5 +192,6 @@ namespace ECommerceApi.Controllers
         } : null
       };
     }
+
   }
 }

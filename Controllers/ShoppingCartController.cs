@@ -134,7 +134,6 @@ namespace ECommerceApi.Controllers
       var itemDtos = cart.Items?.Select(i => new ShoppingCartItemDto
       {
         Id = i.Id,
-        ProductId = i.ProductId,
         Product = i.Product != null ? new ProductDto
         {
           Id = i.Product.Id,
