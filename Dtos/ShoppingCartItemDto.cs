@@ -7,8 +7,7 @@ namespace ECommerceApi.Dtos
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public Guid? Id { get; set; }
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-        public Guid? ProductId { get; set; }
+
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public ProductDto? Product { get; set; }
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
@@ -28,11 +27,4 @@ namespace ECommerceApi.Dtos
         [Required]
         public Guid ShoppingCartId { get; set; }
     }
-
-    // public class ShoppingCartItemUpdateDto
-    // {
-    //     [Required(ErrorMessage = "The Quantity field is required.")]
-    //     [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1.")]
-    //     public int Quantity { get; set; }
-    // }
 }
