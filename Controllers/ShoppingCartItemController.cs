@@ -34,6 +34,7 @@ namespace ECommerceApi.Controllers
       {
         var itemDto = ItemToDto(item);
         itemDto.Product.Category.Products = null;
+        itemDto.Product.CategoryId = null;
         return itemDto;
       }).ToList();
       return Ok(itemDtos);
@@ -55,6 +56,7 @@ namespace ECommerceApi.Controllers
       
       var itemDto = ItemToDto(item);
       itemDto.Product.Category.Products = null;
+      itemDto.Product.CategoryId = null;
       return Ok(itemDto);
     }
 
@@ -180,7 +182,6 @@ namespace ECommerceApi.Controllers
           Id = item.Product.Id,
           Name = item.Product.Name,
           Price = item.Product.Price,
-          CategoryId = item.Product.CategoryId,
           Category = item.Product.Category != null ? new CategoryDto
           {
             Id = item.Product.Category.Id,
@@ -191,5 +192,6 @@ namespace ECommerceApi.Controllers
         ShoppingCartId = item.ShoppingCartId
       };
     }
+  
   }
 }
