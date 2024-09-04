@@ -10,7 +10,7 @@ namespace ECommerceApi.Dtos
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public ICollection<ShoppingCartItemDto> Items { get; set; } = new List<ShoppingCartItemDto>();
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public UserDto User { get; set; }
+    public UserDto? User { get; set; }
   }
 
   public class ShoppingCartCreateDto

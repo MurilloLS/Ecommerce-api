@@ -24,16 +24,9 @@ namespace ECommerceApi.Controllers
           .Include(c => c.Products)
           .ToListAsync();
 
-      var categoryDtos = categories.Select(category =>
-      {
-        var categoryDto = ItemToDto(category);
-        foreach (var product in categoryDto.Products)
-        {
-          product.CategoryId = null;
-          product.Category = null;
-        }
-        return categoryDto;
-      }).ToList();
+      var categoryDtos = categories.Select(ItemToDto).ToList();
+      ClearCategoryReferences(categoryDtos);
+
       return Ok(categoryDtos);
     }
 
@@ -51,11 +44,8 @@ namespace ECommerceApi.Controllers
       }
 
       var categoryDto = ItemToDto(category);
-      foreach (var product in categoryDto.Products)
-      {
-          product.CategoryId = null;  
-          product.Category = null;    
-      }
+      ClearCategoryReferences(new List<CategoryDto> { categoryDto });
+
       return Ok(categoryDto);
     }
 
@@ -72,8 +62,8 @@ namespace ECommerceApi.Controllers
       await _context.SaveChangesAsync();
 
       var createdCategory = await _context.Categories
-              .Include(c => c.Products)
-              .FirstOrDefaultAsync(c => c.Id == category.Id);
+          .Include(c => c.Products)
+          .FirstOrDefaultAsync(c => c.Id == category.Id);
 
       var categoryDto = ItemToDto(createdCategory);
       return CreatedAtAction(nameof(GetCategory), new { id = category.Id }, categoryDto);
@@ -141,13 +131,21 @@ namespace ECommerceApi.Controllers
           Name = product.Name,
           Price = product.Price,
           CategoryId = product.CategoryId,
-          Category = new CategoryDto
-          {
-            Id = product.Category.Id,
-            Name = product.Category.Name
-          }
+          Category = null 
         }).ToList()
       };
+    }
+
+    private void ClearCategoryReferences(IEnumerable<CategoryDto> categoryDtos)
+    {
+      foreach (var categoryDto in categoryDtos)
+      {
+        foreach (var product in categoryDto.Products)
+        {
+          product.CategoryId = null;
+          product.Category = null;
+        }
+      }
     }
   }
 }

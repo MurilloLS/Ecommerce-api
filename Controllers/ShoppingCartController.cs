@@ -48,12 +48,23 @@ namespace ECommerceApi.Controllers
     [HttpPost]
     public async Task<ActionResult<ShoppingCartDto>> PostShoppingCart(ShoppingCartCreateDto shoppingCartCreateDto)
     {
-      var user = await _context.Users.FindAsync(shoppingCartCreateDto.UserId);
-      if (user == null)
+      // Verifica se o usuário existe
+      if (!await _context.Users.AnyAsync(u => u.Id == shoppingCartCreateDto.UserId))
       {
         return BadRequest("Invalid UserId. User does not exist.");
       }
 
+      // Verifica se já existe um carrinho para o usuário
+      var existingCart = await _context.ShoppingCarts
+          .FirstOrDefaultAsync(sc => sc.UserId == shoppingCartCreateDto.UserId);
+
+      if (existingCart != null)
+      {
+        // Se já existir, retorna o carrinho existente
+        return Ok(ItemToDto(existingCart));
+      }
+
+      // Cria um novo carrinho se não houver um existente
       var shoppingCart = new ShoppingCart
       {
         Id = Guid.NewGuid(),
@@ -63,9 +74,9 @@ namespace ECommerceApi.Controllers
       _context.ShoppingCarts.Add(shoppingCart);
       await _context.SaveChangesAsync();
 
-      var cartDto = ItemToDto(shoppingCart);
-      return CreatedAtAction(nameof(GetShoppingCart), new { id = cartDto.Id }, cartDto);
+      return CreatedAtAction(nameof(GetShoppingCart), new { id = shoppingCart.Id }, ItemToDto(shoppingCart));
     }
+
 
     [HttpPut("{id}")]
     public async Task<IActionResult> PutShoppingCart(Guid id, ShoppingCartCreateDto shoppingCartCreateDto)
@@ -124,38 +135,33 @@ namespace ECommerceApi.Controllers
         throw new ArgumentNullException(nameof(cart));
       }
 
-      UserDto userDto = cart.User != null ? new UserDto
-      {
-        Id = cart.User.Id,
-        Name = cart.User.Name,
-        Email = cart.User.Email
-      } : null;
-
-      var itemDtos = cart.Items?.Select(i => new ShoppingCartItemDto
-      {
-        Id = i.Id,
-        Product = i.Product != null ? new ProductDto
-        {
-          Id = i.Product.Id,
-          Name = i.Product.Name,
-          Price = i.Product.Price,
-          CategoryId = i.Product.CategoryId,
-          Category = i.Product.Category != null ? new CategoryDto
-          {
-            Id = i.Product.Category.Id,
-            Name = i.Product.Category.Name
-          } : null
-        } : null,
-        Quantity = i.Quantity
-      }).ToList() ?? new List<ShoppingCartItemDto>();
-
       return new ShoppingCartDto
       {
         Id = cart.Id,
-        User = userDto,
-        Items = itemDtos
+        User = cart.User != null ? new UserDto
+        {
+          Id = cart.User.Id,
+          Name = cart.User.Name,
+          Email = cart.User.Email
+        } : null,
+        Items = cart.Items?.Select(i => new ShoppingCartItemDto
+        {
+          Id = i.Id,
+          Product = i.Product != null ? new ProductDto
+          {
+            Id = i.Product.Id,
+            Name = i.Product.Name,
+            Price = i.Product.Price,
+            CategoryId = i.Product.CategoryId,
+            Category = i.Product.Category != null ? new CategoryDto
+            {
+              Id = i.Product.Category.Id,
+              Name = i.Product.Category.Name
+            } : null
+          } : null,
+          Quantity = i.Quantity
+        }).ToList() ?? new List<ShoppingCartItemDto>()
       };
     }
-
   }
 }

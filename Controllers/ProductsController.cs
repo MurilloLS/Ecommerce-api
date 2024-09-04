@@ -24,22 +24,9 @@ namespace ECommerceApi.Controllers
           .Include(p => p.Category)
           .ToListAsync();
 
-      var productDtos = products.Select(p => new ProductDto
-      {
-          Id = p.Id,
-          Name = p.Name,
-          Price = p.Price,
-          CategoryId = p.Category?.Id,
-          Category = new CategoryDto
-          {
-            Id = p.Category.Id,
-            Name = p.Category.Name,
-            Products = null
-          }
-      }).ToList();
+      var productDtos = products.Select(ItemToDto).ToList();
+      ClearCategoryReferences(productDtos);
 
-
-  
       return Ok(productDtos);
     }
 
@@ -56,8 +43,8 @@ namespace ECommerceApi.Controllers
       }
 
       var productDto = ItemToDto(product);
+      ClearCategoryReferences(new List<ProductDto> { productDto });
 
-      productDto.Category.Products = null;
       return Ok(productDto);
     }
 
@@ -143,13 +130,23 @@ namespace ECommerceApi.Controllers
         Id = product.Id,
         Name = product.Name,
         Price = product.Price,
-        CategoryId = product.CategoryId,
         Category = product.Category != null ? new CategoryDto
         {
           Id = product.Category.Id,
           Name = product.Category.Name
         } : null
       };
+    }
+
+    private void ClearCategoryReferences(IEnumerable<ProductDto> productDtos)
+    {
+      foreach (var productDto in productDtos)
+      {
+        if (productDto.Category != null)
+        {
+          productDto.Category.Products = null;
+        }
+      }
     }
   }
 }
