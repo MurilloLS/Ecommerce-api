@@ -1,4 +1,4 @@
-# Ecommerce-API
+# Ecommerce-API 🛒
 
 Uma API RESTful de E-Commerce desenvolvida com ASP.NET Core, integrada com Entity Framework Core para gerenciamento de banco de dados. Este projeto foca em fornecer uma solução escalável e de fácil manutenção para o gerenciamento de produtos, pedidos, usuários, carrinho de compras e itens do carrinho.
 
@@ -6,7 +6,7 @@ Uma API RESTful de E-Commerce desenvolvida com ASP.NET Core, integrada com Entit
 ## Descrição do Projeto
 O Ecommerce-API é uma aplicação backend que fornece funcionalidades essenciais para a operação de uma plataforma de e-commerce. A API é construída utilizando ASP.NET Core e faz uso do Entity Framework Core para interagir com o banco de dados, garantindo um desempenho eficiente e a integridade dos dados.
 
-## Funcionalidades
+## Funcionalidades 
 - **Gerenciamento de Produtos:** Cadastro, atualização, remoção e listagem de produtos.
 - **Gerenciamento de Pedidos:** Criação, acompanhamento e atualização do status de pedidos.
 - **Gerenciamento de Usuários:** Cadastro, autenticação e gerenciamento de perfis de usuários.
@@ -14,7 +14,7 @@ O Ecommerce-API é uma aplicação backend que fornece funcionalidades essenciai
 - **Gerenciamento de Itens do Carrinho:** Controle detalhado de produtos dentro do carrinho, incluindo quantidades e preços.
 - Integração com banco de dados relacional via Entity Framework Core.
 
-## Tecnologias Utilizadas
+## Tecnologias Utilizadas 🔧
 - **ASP.NET Core** - Framework principal para o desenvolvimento da API.
 - **Entity Framework Core** - Utilizado para a comunicação com o banco de dados.
 - **SQL Server** - Opção de bancos de dados utilizado.
