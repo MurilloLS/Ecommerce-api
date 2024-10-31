@@ -1,6 +1,6 @@
 # Ecommerce-API 🛒
 
-Uma API RESTful poderosa e flexível desenvolvida com **ASP.NET Core** e **Entity Framework Core** para atender às necessidades de uma plataforma de e-commerce. Esta API facilita o gerenciamento de produtos, pedidos, usuários, carrinho de compras e itens do carrinho com uma arquitetura escalável e bem organizada.
+Uma API RESTful desenvolvida com **ASP.NET Core** e **Entity Framework Core** para atender às necessidades de uma plataforma de e-commerce. Esta API facilita o gerenciamento de produtos, pedidos, usuários, carrinho de compras e itens do carrinho com uma arquitetura escalável e bem organizada.
 
 ## 🚀 Visão Geral
 
